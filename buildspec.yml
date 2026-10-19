@@ -1,0 +1,52 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_REPO: "ragulgandhi/mindtrack"
+    EKS_CLUSTER: "ragul"
+    AWS_REGION: "ap-south-1"
+    K8S_MANIFEST: "brain-app.yml"
+    DEPLOYMENT_NAME: "brain-app"      # metadata.name in your deployment
+    CONTAINER_NAME: "project-app-1"       # container name inside the deployment
+    parameter-store:
+        DOCKER_USER: "/brain-app/dockerhub/username"
+        DOCKER_PASS: "/brain-app/dockerhub/password"
+
+phases:
+  install:
+    commands:
+      - echo "Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl && mv kubectl /usr/local/bin/
+      - kubectl version --client
+
+  pre_build:
+    commands:
+      - echo "Logging in to Docker Hub..."
+      - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+      - echo "Image tag is $IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build -t $IMAGE_REPO:$IMAGE_TAG -t $IMAGE_REPO:latest .
+
+  post_build:
+    commands:
+      - echo "Pushing image to Docker Hub..."
+      - docker push $IMAGE_REPO:$IMAGE_TAG
+      - docker push $IMAGE_REPO:latest
+      - echo "Configuring kubectl for EKS..."
+      - aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
+      - echo "Deploying to EKS..."
+      - kubectl apply -f $K8S_MANIFEST
+      - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_REPO:$IMAGE_TAG
+      - kubectl rollout status deployment/$DEPLOYMENT_NAME --timeout=180s
+      - kubectl get pods -o wide
+      - kubectl get svc
+
+artifacts:
+  files:
+    - brain-app.yml
+    - appspec.yml
