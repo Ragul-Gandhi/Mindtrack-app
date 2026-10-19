@@ -6,8 +6,8 @@ env:
     EKS_CLUSTER: "ragul"
     AWS_REGION: "ap-south-1"
     K8S_MANIFEST: "k8s/brainapp.yml"
-    DEPLOYMENT_NAME: "brain-app"      # metadata.name in your deployment
-    CONTAINER_NAME: "project-app-1"       # container name inside the deployment
+    DEPLOYMENT_NAME: "brain-app-deploy"      # metadata.name in your deployment
+    CONTAINER_NAME: "project-1-app"       # container name inside the deployment
   parameter-store:
         DOCKER_USER: "/brain-app/dockerhub/username"
         DOCKER_PASS: "/brain-app/dockerhub/password"
@@ -48,5 +48,4 @@ phases:
 
 artifacts:
   files:
-    - k8s/brain-app.yml
-    - k8s/appspec.yml
+    - k8s/brainapp.yml
