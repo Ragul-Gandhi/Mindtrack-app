@@ -8,7 +8,7 @@ env:
     K8S_MANIFEST: "brain-app.yml"
     DEPLOYMENT_NAME: "brain-app"      # metadata.name in your deployment
     CONTAINER_NAME: "project-app-1"       # container name inside the deployment
-    parameter-store:
+  parameter-store:
         DOCKER_USER: "/brain-app/dockerhub/username"
         DOCKER_PASS: "/brain-app/dockerhub/password"
 
